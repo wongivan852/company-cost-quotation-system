@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Request Submitted - QuoteFlow Pro{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-lg">
+            <div class="card-body text-center p-5">
+                <!-- Success Icon -->
+                <div class="mb-4">
+                    <div class="rounded-circle bg-success bg-opacity-10 p-4 d-inline-flex">
+                        <i class="fas fa-check-circle fa-3x text-success"></i>
+                    </div>
+                </div>
+                
+                <!-- Success Message -->
+                <h2 class="text-success mb-3">Request Submitted Successfully!</h2>
+                <p class="text-muted mb-4 lead">
+                    Thank you for your quotation request. We have received your information and will process it shortly.
+                </p>
+                
+                <!-- Request Details Card -->
+                <div class="card bg-light border-0 mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary mb-3">
+                            <i class="fas fa-info-circle me-2"></i>Request Details
+                        </h5>
+                        <div class="row text-start">
+                            <div class="col-sm-4">
+                                <strong>Reference ID:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-primary">{{ request.request_number|default:request.id }}</span>
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="row text-start">
+                            <div class="col-sm-4">
+                                <strong>Company:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ request.company_name }}
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="row text-start">
+                            <div class="col-sm-4">
+                                <strong>Project:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ request.project_title }}
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="row text-start">
+                            <div class="col-sm-4">
+                                <strong>Contact Person:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {{ request.contact_person }}
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="row text-start">
+                            <div class="col-sm-4">
+                                <strong>Priority:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-{{ request.priority|yesno:'danger,warning,success,danger' }}">
+                                    {{ request.get_priority_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <hr class="my-2">
+                        <div class="row text-start">
+                            <div class="col-sm-4">
+                                <strong>Submitted:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                <i class="fas fa-clock me-1"></i>{{ request.submitted_at|date:"F d, Y - H:i" }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Next Steps -->
+                <div class="alert alert-info border-0 mb-4">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-lightbulb me-2"></i>What happens next?
+                    </h6>
+                    <ul class="list-unstyled mb-0 text-start">
+                        <li class="mb-2">
+                            <i class="fas fa-user-check text-primary me-2"></i>
+                            Our sales team will review your request within 24-48 hours
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-phone text-primary me-2"></i>
+                            We'll contact you at <strong>{{ request.phone }}</strong> for any clarifications
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-file-invoice-dollar text-primary me-2"></i>
+                            A detailed quotation will be prepared based on your requirements
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-envelope text-primary me-2"></i>
+                            Updates will be sent to <strong>{{ request.email }}</strong>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="{% url 'quotations:customer_request' %}" class="btn btn-outline-primary me-md-2">
+                        <i class="fas fa-plus me-2"></i>Submit Another Request
+                    </a>
+                    <a href="mailto:{{ request.email }}?subject=Request #{{ request.id }} - {{ request.project_title }}" class="btn btn-primary">
+                        <i class="fas fa-envelope me-2"></i>Email Us
+                    </a>
+                </div>
+                
+                <!-- Contact Information -->
+                <div class="mt-4 pt-3 border-top">
+                    <p class="text-muted mb-0 small">
+                        <i class="fas fa-question-circle me-1"></i>
+                        Questions? Contact us at 
+                        <a href="mailto:sales@company.com" class="text-decoration-none">sales@company.com</a> 
+                        or call <a href="tel:+6512345678" class="text-decoration-none">+65 1234 5678</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Optional: Add some spacing at the bottom -->
+<div class="mb-5"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Optional: Auto-scroll to top on page load
+window.scrollTo(0, 0);
+
+// Optional: Show a brief celebration animation
+document.addEventListener('DOMContentLoaded', function() {
+    const successIcon = document.querySelector('.fa-check-circle');
+    if (successIcon) {
+        successIcon.style.transform = 'scale(0)';
+        setTimeout(function() {
+            successIcon.style.transition = 'transform 0.5s ease-out';
+            successIcon.style.transform = 'scale(1)';
+        }, 200);
+    }
+});
+</script>
+{% endblock %}

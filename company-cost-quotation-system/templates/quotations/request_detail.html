@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+
+{% block title %}Request Details - QuoteFlow Pro{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <!-- Page Header -->
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-file-alt me-2 text-primary"></i>Request Details
+                </h2>
+                <p class="text-muted mb-0">Reference: <span class="badge bg-primary">{{ request.request_number|default:request.id }}</span></p>
+            </div>
+            <div>
+                <a href="{% url 'quotations:request_list' %}" class="btn btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left me-1"></i>Back to List
+                </a>
+                {% if request.status == 'submitted' and user.groups.all|join:',' in 'Sales Supervisor,General Manager' %}
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#assignModal">
+                    <i class="fas fa-user-plus me-1"></i>Assign Staff
+                </button>
+                {% endif %}
+                {% if request.status != 'converted' %}
+                <a href="{% url 'quotations:quotation_create_from_request' request.id %}" class="btn btn-success">
+                    <i class="fas fa-file-plus me-1"></i>Create Quotation
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Main Request Information -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Request Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Company Name:</strong></div>
+                    <div class="col-sm-9">{{ request.company_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Contact Person:</strong></div>
+                    <div class="col-sm-9">{{ request.contact_person }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Email:</strong></div>
+                    <div class="col-sm-9">
+                        <a href="mailto:{{ request.email }}" class="text-decoration-none">{{ request.email }}</a>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Phone:</strong></div>
+                    <div class="col-sm-9">
+                        <a href="tel:{{ request.phone }}" class="text-decoration-none">{{ request.phone }}</a>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Project Title:</strong></div>
+                    <div class="col-sm-9"><strong class="text-primary">{{ request.project_title }}</strong></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Expected Delivery:</strong></div>
+                    <div class="col-sm-9">
+                        <i class="fas fa-calendar me-1"></i>{{ request.expected_delivery_date|date:"F d, Y" }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Budget Range:</strong></div>
+                    <div class="col-sm-9">
+                        {% if request.budget_range %}
+                            <span class="badge bg-info">{{ request.budget_range }}</span>
+                        {% else %}
+                            <span class="text-muted">Not specified</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Description -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Project Description
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="bg-light p-3 rounded">
+                    {{ request.project_description|linebreaks }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Wishlist Items -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-heart me-2"></i>Customer Wishlist
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="bg-light p-3 rounded">
+                    {{ request.wishlist_items|linebreaks }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Notes -->
+        {% if request.sales_notes %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-sticky-note me-2"></i>Sales Notes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning border-0">
+                    {{ request.sales_notes|linebreaks }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Status Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-flag me-2"></i>Status & Priority
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Current Status</label>
+                    <div>
+                        {% if request.status == 'submitted' %}
+                            <span class="badge bg-warning">{{ request.get_status_display }}</span>
+                        {% elif request.status == 'under_review' %}
+                            <span class="badge bg-info">{{ request.get_status_display }}</span>
+                        {% elif request.status == 'converted' %}
+                            <span class="badge bg-success">{{ request.get_status_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ request.get_status_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Priority Level</label>
+                    <div>
+                        <span class="badge bg-{{ request.priority|yesno:'danger,warning,success,danger' }}">
+                            {{ request.get_priority_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Submitted On</label>
+                    <div>
+                        <i class="fas fa-clock me-1"></i>{{ request.submitted_at|date:"F d, Y - H:i" }}
+                        <br><small class="text-muted">{{ request.submitted_at|timesince }} ago</small>
+                    </div>
+                </div>
+                {% if request.assigned_sales_staff %}
+                <div class="mb-0">
+                    <label class="form-label small text-muted">Assigned Staff</label>
+                    <div>
+                        <i class="fas fa-user me-1"></i>{{ request.assigned_sales_staff.get_full_name|default:request.assigned_sales_staff.username }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Existing Customer Info -->
+        {% if request.existing_customer %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-building me-2"></i>Existing Customer
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>{{ request.existing_customer.company_name }}</strong></p>
+                <p class="mb-1 small text-muted">{{ request.existing_customer.address }}</p>
+                <p class="mb-1 small text-muted">{{ request.existing_customer.city }}, {{ request.existing_customer.state }}</p>
+                <p class="mb-0 small text-muted">{{ request.existing_customer.country }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Converted Quotation -->
+        {% if request.converted_quotation %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Generated Quotation
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>{{ request.converted_quotation.quotation_number }}</strong>
+                </p>
+                <p class="mb-2 small text-muted">{{ request.converted_quotation.title }}</p>
+                <a href="{% url 'quotations:quotation_detail' request.converted_quotation.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye me-1"></i>View Quotation
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="mailto:{{ request.email }}?subject=Re: {{ request.project_title }} (Ref: #{{ request.id }})" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-envelope me-2"></i>Email Customer
+                    </a>
+                    <a href="tel:{{ request.phone }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-phone me-2"></i>Call Customer
+                    </a>
+                    {% if request.status != 'converted' %}
+                    <a href="{% url 'quotations:quotation_create_from_request' request.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-file-plus me-2"></i>Create Quotation
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assign Staff Modal -->
+{% if request.status == 'submitted' and user.groups.all|join:',' in 'Sales Supervisor,General Manager' %}
+<div class="modal fade" id="assignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>Assign Sales Staff
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'quotations:assign_request' request.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="staff_id" class="form-label">Select Sales Staff</label>
+                        <select class="form-select" id="staff_id" name="staff_id" required>
+                            <option value="">Choose a staff member...</option>
+                            {% for staff in sales_staff %}
+                            <option value="{{ staff.id }}">{{ staff.get_full_name|default:staff.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="alert alert-info border-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Assigning this request will change its status to "Under Review" and notify the selected staff member.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-check me-1"></i>Assign Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-focus on staff selection when modal opens
+document.getElementById('assignModal')?.addEventListener('shown.bs.modal', function() {
+    document.getElementById('staff_id')?.focus();
+});
+</script>
+{% endblock %}

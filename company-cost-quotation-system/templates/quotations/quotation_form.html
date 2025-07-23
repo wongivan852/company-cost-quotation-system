@@ -1,0 +1,422 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Quotation - QuoteFlow Pro{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <!-- Page Header -->
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-file-plus me-2 text-primary"></i>Create New Quotation
+                </h2>
+                <p class="text-muted mb-0">
+                    {% if customer_request %}
+                        Based on request from {{ customer_request.company_name }}
+                    {% else %}
+                        Create a new quotation from scratch
+                    {% endif %}
+                </p>
+            </div>
+            <div>
+                <a href="{% url 'quotations:quotation_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="post" class="row">
+    {% csrf_token %}
+    
+    <!-- Main Form -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Quotation Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Customer Selection -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.customer.id_for_label }}" class="form-label">
+                            Customer <span class="text-danger">*</span>
+                        </label>
+                        {{ form.customer }}
+                        {% if form.customer.errors %}
+                            <div class="text-danger small">{{ form.customer.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.valid_until.id_for_label }}" class="form-label">
+                            Valid Until <span class="text-danger">*</span>
+                        </label>
+                        {{ form.valid_until }}
+                        {% if form.valid_until.errors %}
+                            <div class="text-danger small">{{ form.valid_until.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Title -->
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">
+                        Quotation Title <span class="text-danger">*</span>
+                    </label>
+                    {{ form.title }}
+                    {% if form.title.errors %}
+                        <div class="text-danger small">{{ form.title.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Description -->
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">
+                        Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                    {% endif %}
+                    <div class="form-text">Provide detailed information about the quotation scope and requirements.</div>
+                </div>
+
+                <!-- Address Information -->
+                <h6 class="mt-4 mb-3 text-primary">
+                    <i class="fas fa-map-marker-alt me-2"></i>Address Information
+                </h6>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="{{ form.delivery_address.id_for_label }}" class="form-label">
+                            Delivery Address
+                        </label>
+                        {{ form.delivery_address }}
+                        {% if form.delivery_address.errors %}
+                            <div class="text-danger small">{{ form.delivery_address.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.installation_address.id_for_label }}" class="form-label">
+                            Installation Address
+                        </label>
+                        {{ form.installation_address }}
+                        {% if form.installation_address.errors %}
+                            <div class="text-danger small">{{ form.installation_address.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.billing_address.id_for_label }}" class="form-label">
+                            Billing Address
+                        </label>
+                        {{ form.billing_address }}
+                        {% if form.billing_address.errors %}
+                            <div class="text-danger small">{{ form.billing_address.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Pricing Information -->
+                <h6 class="mt-4 mb-3 text-primary">
+                    <i class="fas fa-calculator me-2"></i>Pricing & Terms
+                </h6>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.discount_percentage.id_for_label }}" class="form-label">
+                            Discount Percentage
+                        </label>
+                        {{ form.discount_percentage }}
+                        {% if form.discount_percentage.errors %}
+                            <div class="text-danger small">{{ form.discount_percentage.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.tax_percentage.id_for_label }}" class="form-label">
+                            Tax Percentage
+                        </label>
+                        {{ form.tax_percentage }}
+                        {% if form.tax_percentage.errors %}
+                            <div class="text-danger small">{{ form.tax_percentage.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Payment Terms -->
+                <div class="mb-3">
+                    <label for="{{ form.payment_terms.id_for_label }}" class="form-label">
+                        Payment Terms
+                    </label>
+                    {{ form.payment_terms }}
+                    {% if form.payment_terms.errors %}
+                        <div class="text-danger small">{{ form.payment_terms.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Delivery Terms -->
+                <div class="mb-3">
+                    <label for="{{ form.delivery_terms.id_for_label }}" class="form-label">
+                        Delivery Terms
+                    </label>
+                    {{ form.delivery_terms }}
+                    {% if form.delivery_terms.errors %}
+                        <div class="text-danger small">{{ form.delivery_terms.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Warranty Terms -->
+                <div class="mb-3">
+                    <label for="{{ form.warranty_terms.id_for_label }}" class="form-label">
+                        Warranty Terms
+                    </label>
+                    {{ form.warranty_terms }}
+                    {% if form.warranty_terms.errors %}
+                        <div class="text-danger small">{{ form.warranty_terms.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Notes -->
+                <div class="mb-0">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">
+                        Additional Notes
+                    </label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                        <div class="text-danger small">{{ form.notes.errors.0 }}</div>
+                    {% endif %}
+                    <div class="form-text">Any additional terms, conditions, or notes for this quotation.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-save me-1"></i>Create Quotation
+                        </button>
+                        <a href="{% url 'quotations:quotation_list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#previewModal">
+                            <i class="fas fa-eye me-1"></i>Preview
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Original Request Info -->
+        {% if customer_request %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Original Request
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Request ID:</strong> 
+                    <span class="badge bg-primary">#{{ customer_request.id }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Company:</strong> {{ customer_request.company_name }}
+                </div>
+                <div class="mb-2">
+                    <strong>Contact:</strong> {{ customer_request.contact_person }}
+                </div>
+                <div class="mb-2">
+                    <strong>Priority:</strong> 
+                    <span class="badge bg-{{ customer_request.priority|yesno:'danger,warning,success,danger' }}">
+                        {{ customer_request.get_priority_display }}
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <strong>Expected Delivery:</strong>
+                    <br><small class="text-muted">{{ customer_request.expected_delivery_date|date:"F d, Y" }}</small>
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Project Description:</strong>
+                    <div class="bg-light p-2 rounded small">
+                        {{ customer_request.project_description|truncatewords:20 }}
+                    </div>
+                </div>
+                
+                <a href="{% url 'quotations:request_detail' customer_request.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-1"></i>View Full Request
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Tips -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Quick Tips
+                </h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Quotation numbers are generated automatically</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Add detailed descriptions to avoid confusion</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Set realistic validity dates (typically 30 days)</small>
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Items and pricing can be added after creation</small>
+                    </li>
+                    <li class="mb-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        <small>Review workflow will begin after saving</small>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Default Terms Reference -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-contract me-2"></i>Standard Terms
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Payment:</strong>
+                    <div class="small text-muted">Net 30 days from invoice date</div>
+                </div>
+                <div class="mb-3">
+                    <strong>Delivery:</strong>
+                    <div class="small text-muted">FOB Singapore, standard shipping</div>
+                </div>
+                <div class="mb-0">
+                    <strong>Warranty:</strong>
+                    <div class="small text-muted">As per manufacturer specifications</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Quotation Preview
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info border-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This is a preview of how your quotation will appear. Items and final pricing will be added after creation.
+                </div>
+                
+                <div class="border p-4 bg-light">
+                    <h4 class="text-primary mb-3">Quotation Preview</h4>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <strong>Title:</strong> <span id="preview-title">-</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Valid Until:</strong> <span id="preview-valid">-</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Description:</strong>
+                        <div id="preview-description" class="bg-white p-2 rounded small">-</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Discount:</strong> <span id="preview-discount">0</span>%
+                        </div>
+                        <div class="col-6">
+                            <strong>Tax:</strong> <span id="preview-tax">7</span>%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-preview functionality
+function updatePreview() {
+    document.getElementById('preview-title').textContent = 
+        document.getElementById('id_title').value || '-';
+    document.getElementById('preview-valid').textContent = 
+        document.getElementById('id_valid_until').value || '-';
+    document.getElementById('preview-description').textContent = 
+        document.getElementById('id_description').value || '-';
+    document.getElementById('preview-discount').textContent = 
+        document.getElementById('id_discount_percentage').value || '0';
+    document.getElementById('preview-tax').textContent = 
+        document.getElementById('id_tax_percentage').value || '7';
+}
+
+// Update preview when modal is shown
+document.getElementById('previewModal').addEventListener('show.bs.modal', updatePreview);
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const requiredFields = ['id_customer', 'id_title', 'id_valid_until'];
+    let hasError = false;
+    
+    requiredFields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            hasError = true;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (hasError) {
+        e.preventDefault();
+        alert('Please fill in all required fields.');
+    }
+});
+
+// Auto-save draft functionality (optional)
+let autoSaveTimeout;
+document.querySelectorAll('input, textarea, select').forEach(field => {
+    field.addEventListener('input', function() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            // Auto-save logic would go here
+            console.log('Auto-saving draft...');
+        }, 3000);
+    });
+});
+</script>
+{% endblock %}

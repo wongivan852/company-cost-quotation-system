@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+
+{% block title %}Request a Quotation - QuoteFlow Pro{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-file-plus me-2"></i>Request a Quotation
+                </h4>
+                <small>Tell us about your project requirements and we'll get back to you with a detailed quote</small>
+            </div>
+            <div class="card-body">
+                <form method="post" id="quotationRequestForm">
+                    {% csrf_token %}
+                    
+                    <!-- Company Information -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-building me-2"></i>Company Information
+                            </h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Company Name</label>
+                            <input type="text" name="company_name" class="form-control" required maxlength="200">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Contact Person</label>
+                            <input type="text" name="contact_person" class="form-control" required maxlength="100">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label required">Email Address</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Phone Number</label>
+                            <input type="tel" name="phone" class="form-control" required maxlength="20" 
+                                   placeholder="+65 1234 5678">
+                        </div>
+                    </div>
+
+                    <!-- Project Details -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h5 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-project-diagram me-2"></i>Project Details
+                            </h5>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label class="form-label required">Project Title</label>
+                            <input type="text" name="project_title" class="form-control" required maxlength="200"
+                                   placeholder="e.g., Office Network Infrastructure Upgrade">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label required">Priority</label>
+                            <select name="priority" class="form-select" required>
+                                <option value="medium" selected>Medium</option>
+                                <option value="low">Low</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label required">Project Description</label>
+                            <textarea name="project_description" class="form-control" rows="4" required
+                                      placeholder="Please provide detailed requirements, specifications, and any specific needs for your project..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label required">Component Wishlist</label>
+                            <textarea name="wishlist_items" class="form-control" rows="4" required
+                                      placeholder="List specific hardware, software, or services you need:&#10;• Server: Dell PowerEdge R750&#10;• Network Switch: Cisco Catalyst 48-port&#10;• Installation and configuration services&#10;• Training for 5 staff members"></textarea>
+                            <small class="text-muted">Be as specific as possible to help us provide an accurate quote</small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Budget Range (Optional)</label>
+                            <select name="budget_range" class="form-select">
+                                <option value="">Please select...</option>
+                                <option value="under_10k">Under $10,000</option>
+                                <option value="10k_25k">$10,000 - $25,000</option>
+                                <option value="25k_50k">$25,000 - $50,000</option>
+                                <option value="50k_100k">$50,000 - $100,000</option>
+                                <option value="100k_250k">$100,000 - $250,000</option>
+                                <option value="over_250k">Over $250,000</option>
+                                <option value="flexible">Budget is flexible</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label required">Expected Delivery Date</label>
+                            <input type="date" name="expected_delivery_date" class="form-control" required
+                                   min="{{ today|date:'Y-m-d' }}">
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="row mb-4 mt-4">
+                        <div class="col-12">
+                            <h5 class="text-primary border-bottom pb-2">
+                                <i class="fas fa-info-circle me-2"></i>Additional Information
+                            </h5>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="installation_required">
+                                <label class="form-check-label" for="installation_required">
+                                    Installation and configuration services required
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="training_required">
+                                <label class="form-check-label" for="training_required">
+                                    Training services required
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="support_required">
+                                <label class="form-check-label" for="support_required">
+                                    Ongoing support and maintenance required
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="warranty_extension">
+                                <label class="form-check-label" for="warranty_extension">
+                                    Extended warranty preferred
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    We typically respond within 24-48 hours
+                                </small>
+                                <div>
+                                    <button type="reset" class="btn btn-outline-secondary me-2">
+                                        <i class="fas fa-undo me-1"></i>Reset Form
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-paper-plane me-1"></i>Submit Request
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Information Cards -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card card-hover h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x text-primary mb-3"></i>
+                        <h6>Quick Response</h6>
+                        <p class="text-muted small">We review and respond to all requests within 24-48 hours</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-hover h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-shield-alt fa-2x text-success mb-3"></i>
+                        <h6>Expert Review</h6>
+                        <p class="text-muted small">Technical and financial experts review every quotation</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card card-hover h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-handshake fa-2x text-info mb-3"></i>
+                        <h6>Competitive Pricing</h6>
+                        <p class="text-muted small">We offer competitive pricing with transparent cost breakdown</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .required:after {
+        content: " *";
+        color: red;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="expected_delivery_date"]').min = today;
+    
+    // Form validation and enhancement
+    const form = document.getElementById('quotationRequestForm');
+    const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+    
+    // Update project description based on checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const description = document.querySelector('textarea[name="project_description"]');
+            let additionalInfo = '\n\nAdditional Services Required:\n';
+            
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    additionalInfo += '• ' + cb.nextElementSibling.textContent.trim() + '\n';
+                }
+            });
+            
+            // Only add if at least one checkbox is checked
+            const hasChecked = Array.from(checkboxes).some(cb => cb.checked);
+            if (hasChecked && !description.value.includes('Additional Services Required:')) {
+                description.value += additionalInfo;
+            }
+        });
+    });
+    
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Submitting...';
+        submitBtn.disabled = true;
+    });
+});
+</script>
+{% endblock %}
