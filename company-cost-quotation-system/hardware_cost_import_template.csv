@@ -1,0 +1,11 @@
+name,brand,model,part_number,cost_price,unit_price
+"Dell PowerEdge R750 Server","Dell","PowerEdge R750","R750-BASE",2500.00,3500.00
+"HP ProLiant DL380 Gen10","HP","ProLiant DL380 Gen10","P40425-B21",2200.00,3200.00
+"Cisco Catalyst 2960-X Switch","Cisco","Catalyst 2960-X","WS-C2960X-24TS-L",450.00,650.00
+"Fortinet FortiGate 60E Firewall","Fortinet","FortiGate 60E","FG-60E",280.00,420.00
+"Lenovo ThinkPad T14 Laptop","Lenovo","ThinkPad T14","20S0CTO1WW",850.00,1200.00
+"Intel Core i7-12700K CPU","Intel","Core i7-12700K","BX8071512700K",320.00,450.00
+"Samsung 970 EVO Plus SSD 1TB","Samsung","970 EVO Plus","MZ-V7S1T0BW",95.00,135.00
+"Corsair Vengeance LPX 32GB RAM","Corsair","Vengeance LPX","CMK32GX4M2E3200C16",125.00,180.00
+"ASUS ROG Strix RTX 3080 GPU","ASUS","ROG Strix RTX 3080","ROG-STRIX-RTX3080-O10G-GAMING",650.00,950.00
+"Ubiquiti UniFi Access Point","Ubiquiti","UniFi AP AC Pro","UAP-AC-PRO",125.00,180.00

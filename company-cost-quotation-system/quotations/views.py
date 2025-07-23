@@ -10,7 +10,7 @@ from django.conf import settings
 from django.db.models import Q
 from .models import (
     Quotation, QuotationItem, QuotationApproval, CustomerQuotationRequest,
-    Customer, Hardware, Service
+    Customer, Hardware, Service, PersonnelCostCategory, QuotationPersonnelCost, MarginAnalysis
 )
 from .forms import CustomerQuotationRequestForm, QuotationForm
 from datetime import datetime, timedelta
@@ -673,4 +673,158 @@ def submit_for_approval(request, quotation_id):
         'success': True,
         'message': 'Quotation submitted for approval successfully',
         'status': quotation.get_status_display()
+    })
+
+@login_required
+def personnel_cost_estimation(request, quotation_id):
+    """View for technical manager to estimate personnel costs"""
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    # Check if user is technical manager
+    if not request.user.groups.filter(name='Technical Manager').exists():
+        messages.error(request, 'Only Technical Managers can estimate personnel costs.')
+        return redirect('quotations:quotation_detail', quotation_id=quotation_id)
+    
+    # Get existing personnel costs
+    personnel_costs = QuotationPersonnelCost.objects.filter(quotation=quotation)
+    
+    # Get available cost categories
+    cost_categories = PersonnelCostCategory.objects.filter(is_active=True)
+    
+    if request.method == 'POST':
+        category_id = request.POST.get('category_id')
+        estimated_hours = request.POST.get('estimated_hours')
+        hourly_rate = request.POST.get('hourly_rate')
+        description = request.POST.get('description')
+        complexity_notes = request.POST.get('complexity_notes')
+        risk_factors = request.POST.get('risk_factors')
+        
+        try:
+            category = PersonnelCostCategory.objects.get(id=category_id)
+            
+            # Create or update personnel cost
+            personnel_cost, created = QuotationPersonnelCost.objects.get_or_create(
+                quotation=quotation,
+                cost_category=category,
+                defaults={
+                    'estimated_hours': estimated_hours,
+                    'hourly_rate': hourly_rate,
+                    'description': description,
+                    'complexity_notes': complexity_notes,
+                    'risk_factors': risk_factors,
+                    'estimated_by': request.user
+                }
+            )
+            
+            if not created:
+                # Update existing
+                personnel_cost.estimated_hours = estimated_hours
+                personnel_cost.hourly_rate = hourly_rate
+                personnel_cost.description = description
+                personnel_cost.complexity_notes = complexity_notes
+                personnel_cost.risk_factors = risk_factors
+                personnel_cost.save()
+            
+            messages.success(request, f'Personnel cost estimation for {category.name} has been saved.')
+            
+        except PersonnelCostCategory.DoesNotExist:
+            messages.error(request, 'Invalid cost category selected.')
+        except Exception as e:
+            messages.error(request, f'Error saving personnel cost: {str(e)}')
+        
+        return redirect('quotations:personnel_cost_estimation', quotation_id=quotation_id)
+    
+    return render(request, 'quotations/personnel_cost_estimation.html', {
+        'quotation': quotation,
+        'personnel_costs': personnel_costs,
+        'cost_categories': cost_categories,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def submit_personnel_costs_for_review(request, quotation_id):
+    """Submit all personnel costs for finance review"""
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    # Check if user is technical manager
+    if not request.user.groups.filter(name='Technical Manager').exists():
+        return JsonResponse({'error': 'Only Technical Managers can submit personnel costs'}, status=403)
+    
+    # Submit all draft personnel costs
+    personnel_costs = QuotationPersonnelCost.objects.filter(
+        quotation=quotation, 
+        status='draft'
+    )
+    
+    submitted_count = 0
+    for cost in personnel_costs:
+        cost.submit_for_review(request.user)
+        submitted_count += 1
+    
+    return JsonResponse({
+        'success': True,
+        'message': f'Submitted {submitted_count} personnel cost estimations for finance review',
+        'submitted_count': submitted_count
+    })
+
+
+@login_required
+def margin_analysis_view(request, quotation_id):
+    """View for finance manager to analyze margins"""
+    quotation = get_object_or_404(Quotation, id=quotation_id)
+    
+    # Check if user is finance manager
+    if not request.user.groups.filter(name='Financial Manager').exists():
+        messages.error(request, 'Only Finance Managers can access margin analysis.')
+        return redirect('quotations:quotation_detail', quotation_id=quotation_id)
+    
+    # Get or create margin analysis
+    margin_analysis, created = MarginAnalysis.objects.get_or_create(
+        quotation=quotation,
+        defaults={'analyzed_by': request.user}
+    )
+    
+    # Get personnel costs for review
+    personnel_costs = QuotationPersonnelCost.objects.filter(quotation=quotation)
+    pending_personnel_costs = personnel_costs.filter(status='submitted')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_analysis':
+            # Update margin analysis
+            margin_analysis.project_risk_level = request.POST.get('project_risk_level')
+            margin_analysis.technical_risk_notes = request.POST.get('technical_risk_notes')
+            margin_analysis.market_risk_notes = request.POST.get('market_risk_notes')
+            margin_analysis.operational_risk_notes = request.POST.get('operational_risk_notes')
+            margin_analysis.sustainability_assessment = request.POST.get('sustainability_assessment')
+            margin_analysis.finance_comments = request.POST.get('finance_comments')
+            margin_analysis.recommendations = request.POST.get('recommendations')
+            margin_analysis.estimated_competitor_price = request.POST.get('estimated_competitor_price') or None
+            margin_analysis.price_competitiveness = request.POST.get('price_competitiveness')
+            margin_analysis.save()
+            
+            messages.success(request, 'Margin analysis has been updated.')
+            
+        elif action == 'approve_personnel_costs':
+            # Approve all pending personnel costs
+            for cost in pending_personnel_costs:
+                cost.approve(request.user, 'Approved via margin analysis')
+            messages.success(request, f'Approved {pending_personnel_costs.count()} personnel cost estimations.')
+            
+        elif action == 'reject_personnel_costs':
+            # Reject personnel costs with comments
+            rejection_comments = request.POST.get('rejection_comments', 'Rejected via margin analysis')
+            for cost in pending_personnel_costs:
+                cost.reject(request.user, rejection_comments)
+            messages.success(request, f'Rejected {pending_personnel_costs.count()} personnel cost estimations.')
+        
+        return redirect('quotations:margin_analysis', quotation_id=quotation_id)
+    
+    return render(request, 'quotations/margin_analysis.html', {
+        'quotation': quotation,
+        'margin_analysis': margin_analysis,
+        'personnel_costs': personnel_costs,
+        'pending_personnel_costs': pending_personnel_costs,
     })

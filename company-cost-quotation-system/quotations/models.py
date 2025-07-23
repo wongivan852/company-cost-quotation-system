@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from decimal import Decimal
+import csv
+import io
 
 
 class Customer(models.Model):
@@ -255,6 +257,61 @@ class CustomerQuotationRequest(models.Model):
         verbose_name_plural = "Customer Quotation Requests"
 
 
+class HardwareCostImport(models.Model):
+    """Model to track hardware cost imports from CSV files"""
+    import_date = models.DateTimeField(auto_now_add=True)
+    imported_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    csv_file = models.FileField(upload_to='hardware_costs/', help_text="CSV file with hardware costs")
+    description = models.TextField(blank=True, help_text="Description of this import")
+    records_imported = models.PositiveIntegerField(default=0)
+    records_updated = models.PositiveIntegerField(default=0)
+    errors_log = models.TextField(blank=True, help_text="Import errors and warnings")
+    is_active = models.BooleanField(default=True, help_text="Whether this import is currently active")
+    
+    def __str__(self):
+        return f"Hardware Cost Import {self.import_date.strftime('%Y-%m-%d %H:%M')} by {self.imported_by.username}"
+    
+    class Meta:
+        ordering = ['-import_date']
+        verbose_name = "Hardware Cost Import"
+        verbose_name_plural = "Hardware Cost Imports"
+
+
+class PersonnelCostCategory(models.Model):
+    """Categories for personnel costs"""
+    CATEGORY_CHOICES = [
+        ('os_setup', 'Device OS Setup & Apps Installation'),
+        ('onsite_install', 'Onsite Installation & Configuration'),
+        ('onsite_training', 'Onsite Training'),
+        ('onsite_maintenance', 'Onsite Maintenance'),
+        ('remote_support', 'Remote Support'),
+        ('consulting', 'Technical Consulting'),
+        ('project_mgmt', 'Project Management'),
+        ('other', 'Other Personnel Services'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    description = models.TextField(help_text="Detailed description of this personnel cost category")
+    standard_hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, 
+                                             help_text="Standard hourly rate for this category")
+    skill_level_required = models.CharField(max_length=50, blank=True, 
+                                          help_text="Required skill level (Junior, Senior, Expert)")
+    estimated_hours_range = models.CharField(max_length=50, blank=True,
+                                           help_text="Typical hours range (e.g., 4-8 hours)")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.name} - ${self.standard_hourly_rate}/hour"
+    
+    class Meta:
+        ordering = ['category', 'name']
+        verbose_name = "Personnel Cost Category"
+        verbose_name_plural = "Personnel Cost Categories"
+
+
 class Quotation(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
@@ -343,6 +400,38 @@ class Quotation(models.Model):
         self.tax_amount = (discounted_amount * self.tax_percentage / 100)
         self.total_amount = discounted_amount + self.tax_amount
         self.save()
+
+    @property
+    def total_hardware_cost(self):
+        """Calculate total hardware cost price"""
+        return sum(item.hardware.cost_price * item.quantity for item in self.items.filter(item_type='hardware'))
+    
+    @property 
+    def total_personnel_cost(self):
+        """Calculate total personnel cost"""
+        return sum(pc.total_cost for pc in self.personnel_costs.all())
+    
+    @property
+    def total_cost_price(self):
+        """Calculate total cost price (hardware + personnel)"""
+        return self.total_hardware_cost + self.total_personnel_cost
+    
+    @property
+    def margin_amount(self):
+        """Calculate margin amount"""
+        return self.total_amount - self.total_cost_price
+    
+    @property
+    def margin_percentage(self):
+        """Calculate margin percentage"""
+        if self.total_cost_price > 0:
+            return (self.margin_amount / self.total_cost_price) * 100
+        return 0
+    
+    @property
+    def is_margin_acceptable(self):
+        """Check if margin meets minimum threshold (configurable)"""
+        return self.margin_percentage >= 15  # 15% minimum margin
 
     def __str__(self):
         return f"{self.quotation_number} - {self.customer.company_name}"
@@ -450,3 +539,176 @@ class QuotationApproval(models.Model):
     class Meta:
         ordering = ['quotation', 'approval_step__step_order']
         unique_together = ['quotation', 'approval_step']
+
+
+class QuotationPersonnelCost(models.Model):
+    """Personnel costs estimated by technical manager for each quotation"""
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('submitted', 'Submitted to Finance'),
+        ('approved', 'Approved by Finance'),
+        ('rejected', 'Rejected by Finance'),
+        ('revised', 'Needs Revision'),
+    ]
+    
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name='personnel_costs')
+    cost_category = models.ForeignKey(PersonnelCostCategory, on_delete=models.CASCADE)
+    
+    # Technical manager's estimation
+    estimated_hours = models.DecimalField(max_digits=6, decimal_places=2, 
+                                        help_text="Hours estimated by technical manager")
+    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2,
+                                    help_text="Hourly rate for this specific task")
+    total_cost = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    
+    # Details
+    description = models.TextField(help_text="Detailed description of work required")
+    complexity_notes = models.TextField(blank=True, 
+                                      help_text="Notes about complexity factors affecting estimation")
+    risk_factors = models.TextField(blank=True,
+                                  help_text="Potential risks that could affect cost/time")
+    
+    # Workflow
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='draft')
+    estimated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='estimated_personnel_costs',
+                                   help_text="Technical manager who provided the estimation")
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                  related_name='reviewed_personnel_costs', 
+                                  help_text="Finance manager who reviewed this cost")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_comments = models.TextField(blank=True, help_text="Finance manager's review comments")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        # Calculate total cost
+        self.total_cost = self.estimated_hours * self.hourly_rate
+        super().save(*args, **kwargs)
+    
+    def submit_for_review(self, user):
+        """Submit personnel cost estimation to finance manager"""
+        self.status = 'submitted'
+        self.submitted_at = timezone.now()
+        self.save()
+    
+    def approve(self, user, comments=''):
+        """Approve personnel cost (finance manager)"""
+        self.status = 'approved'
+        self.reviewed_by = user
+        self.reviewed_at = timezone.now()
+        self.review_comments = comments
+        self.save()
+    
+    def reject(self, user, comments=''):
+        """Reject personnel cost (finance manager)"""
+        self.status = 'rejected'
+        self.reviewed_by = user
+        self.reviewed_at = timezone.now()
+        self.review_comments = comments
+        self.save()
+    
+    def __str__(self):
+        return f"{self.quotation.quotation_number} - {self.cost_category.name} - ${self.total_cost}"
+    
+    class Meta:
+        ordering = ['quotation', 'cost_category']
+        verbose_name = "Personnel Cost Estimation"
+        verbose_name_plural = "Personnel Cost Estimations"
+
+
+class MarginAnalysis(models.Model):
+    """Detailed margin analysis for finance manager review"""
+    RISK_LEVELS = [
+        ('low', 'Low Risk'),
+        ('medium', 'Medium Risk'), 
+        ('high', 'High Risk'),
+        ('critical', 'Critical Risk'),
+    ]
+    
+    SUSTAINABILITY_CHOICES = [
+        ('sustainable', 'Sustainable'),
+        ('marginal', 'Marginal'),
+        ('unsustainable', 'Unsustainable'),
+    ]
+    
+    quotation = models.OneToOneField(Quotation, on_delete=models.CASCADE, related_name='margin_analysis')
+    
+    # Financial analysis
+    total_hardware_cost = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
+    total_personnel_cost = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
+    total_cost = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
+    total_revenue = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
+    gross_margin = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
+    margin_percentage = models.DecimalField(max_digits=5, decimal_places=2, editable=False)
+    
+    # Risk assessment
+    project_risk_level = models.CharField(max_length=10, choices=RISK_LEVELS, default='medium')
+    technical_risk_notes = models.TextField(blank=True, 
+                                          help_text="Technical risks that could affect costs")
+    market_risk_notes = models.TextField(blank=True,
+                                       help_text="Market/competitive risks")
+    operational_risk_notes = models.TextField(blank=True,
+                                            help_text="Operational risks (resources, timeline)")
+    
+    # Finance manager assessment
+    sustainability_assessment = models.CharField(max_length=15, choices=SUSTAINABILITY_CHOICES,
+                                                blank=True, help_text="Overall sustainability assessment")
+    finance_comments = models.TextField(blank=True, 
+                                      help_text="Finance manager's detailed comments")
+    recommendations = models.TextField(blank=True,
+                                     help_text="Recommendations for improving margin")
+    
+    # Competitive analysis
+    estimated_competitor_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True,
+                                                   help_text="Estimated competitor pricing")
+    price_competitiveness = models.TextField(blank=True,
+                                           help_text="Analysis of price competitiveness")
+    
+    # Approval tracking
+    analyzed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='margin_analyses')
+    analyzed_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        # Calculate financial metrics
+        self.total_hardware_cost = self.quotation.total_hardware_cost
+        self.total_personnel_cost = self.quotation.total_personnel_cost
+        self.total_cost = self.total_hardware_cost + self.total_personnel_cost
+        self.total_revenue = self.quotation.total_amount
+        self.gross_margin = self.total_revenue - self.total_cost
+        
+        if self.total_cost > 0:
+            self.margin_percentage = (self.gross_margin / self.total_cost) * 100
+        else:
+            self.margin_percentage = 0
+            
+        super().save(*args, **kwargs)
+    
+    @property
+    def is_margin_healthy(self):
+        """Check if margin meets company standards"""
+        return self.margin_percentage >= 20  # 20% target margin
+    
+    @property
+    def margin_status(self):
+        """Get margin status description"""
+        if self.margin_percentage >= 25:
+            return "Excellent"
+        elif self.margin_percentage >= 20:
+            return "Good"
+        elif self.margin_percentage >= 15:
+            return "Acceptable"
+        elif self.margin_percentage >= 10:
+            return "Marginal"
+        else:
+            return "Poor"
+    
+    def __str__(self):
+        return f"{self.quotation.quotation_number} - Margin: {self.margin_percentage:.1f}%"
+    
+    class Meta:
+        verbose_name = "Margin Analysis"
+        verbose_name_plural = "Margin Analyses"

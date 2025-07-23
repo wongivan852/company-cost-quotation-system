@@ -27,6 +27,11 @@ urlpatterns = [
     path('quotations/<int:quotation_id>/approve/', views.approve_quotation_step, name='approve_quotation_step'),
     path('quotations/<int:quotation_id>/submit/', views.submit_for_approval, name='submit_for_approval'),
     
+    # Cost Management
+    path('quotations/<int:quotation_id>/personnel-costs/', views.personnel_cost_estimation, name='personnel_cost_estimation'),
+    path('quotations/<int:quotation_id>/personnel-costs/submit/', views.submit_personnel_costs_for_review, name='submit_personnel_costs'),
+    path('quotations/<int:quotation_id>/margin-analysis/', views.margin_analysis_view, name='margin_analysis'),
+    
     # API endpoints
     path('api/components/', views.get_hardware_components, name='api_components'),
     path('api/quotations/<int:quotation_id>/items/', views.add_quotation_items, name='api_add_items'),
