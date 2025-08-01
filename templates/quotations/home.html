@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Company Cost Quotation System{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Total Requests</h5>
+                        <h2>{{ total_requests }}</h2>
+                    </div>
+                    <i class="fas fa-inbox fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'customer_request_list' %}" class="text-white text-decoration-none">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Pending Requests</h5>
+                        <h2>{{ pending_requests }}</h2>
+                    </div>
+                    <i class="fas fa-clock fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'customer_request_list' %}?status=pending" class="text-white text-decoration-none">
+                    View Pending <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Total Quotations</h5>
+                        <h2>{{ total_quotations }}</h2>
+                    </div>
+                    <i class="fas fa-file-invoice-dollar fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'quotation_list' %}" class="text-white text-decoration-none">
+                    View All <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Approved Quotes</h5>
+                        <h2>{{ approved_quotations }}</h2>
+                    </div>
+                    <i class="fas fa-check-circle fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'quotation_list' %}?approval=approved" class="text-white text-decoration-none">
+                    View Approved <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-12">
+        <h2>Quick Actions</h2>
+        <div class="d-flex gap-3">
+            <a href="{% url 'customer_request_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Customer Request
+            </a>
+            <a href="{% url 'hardware_list' %}" class="btn btn-secondary">
+                <i class="fas fa-microchip"></i> Browse Hardware
+            </a>
+            <a href="/admin/" class="btn btn-dark">
+                <i class="fas fa-cog"></i> Admin Panel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
